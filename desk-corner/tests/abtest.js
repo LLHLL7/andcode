@@ -1,0 +1,21 @@
+const { chromium } = require('playwright');
+(async () => {
+  const [,, f] = process.argv;
+  const b = await chromium.launch({args:['--use-gl=swiftshader']});
+  const p = await b.newPage({viewport:{width:1440,height:900}});
+  const errs=[];p.on('pageerror',e=>errs.push(e.message));
+  await p.goto('file://'+f); await p.waitForTimeout(3000);
+  const W=ms=>p.waitForTimeout(ms);
+  await p.evaluate(()=>window.__zoom(3));await W(1500);await p.mouse.move(5,5);await p.mouse.move(40,40);
+  const click=async n=>{const r=await p.evaluate(n=>{const e=[...document.querySelectorAll('.it')].find(e=>((e.querySelector('.lb')||{}).textContent)==n&&getComputedStyle(e).display!='none');if(!e)return null;const r=e.getBoundingClientRect();return [r.x+r.width/2,r.y+r.height*.6]},n);if(!r){console.log('none',n);return 0}await p.mouse.move(r[0]-10,r[1]);await p.mouse.move(r[0],r[1],{steps:3});await p.mouse.click(r[0],r[1]);await W(900);return 1};
+  const act=async i=>{await p.click(`#rd [data-a="${i}"]`);await W(400);return p.evaluate(()=>document.querySelector('#ic').textContent)};
+  const close=async()=>{if(await p.evaluate(()=>document.querySelector('#rd').classList.contains('on'))){await p.click('#cls');await W(1100)}};
+  await click('两瓶深色的瓶子');console.log('acts',await p.evaluate(()=>[...document.querySelectorAll('#rd [data-a]')].map(b=>b.textContent)),await p.evaluate(()=>document.querySelector('#ic').textContent));
+  console.log('A',await act(2));await W(1500);await close();
+  await p.screenshot({path:'shots/ab_after_A.png'});
+  await click('两瓶深色的瓶子');console.log('again A',await act(2));console.log('B',await act(3));await W(1500);await close();
+  console.log('inv',await p.evaluate(()=>[...document.querySelectorAll('#inv [data-g]')].map(e=>e.dataset.g)),'el',await p.evaluate(()=>{const e=[...document.querySelectorAll('.it')].find(e=>/两瓶深色/.test((e.querySelector('.lb')||{}).textContent||''));return getComputedStyle(e).display}));
+  await p.evaluate(()=>window.__zoom(2));await W(1500);await p.mouse.move(5,5);await p.mouse.move(40,40);
+  await click('蓝晒印象');console.log('box acts',await p.evaluate(()=>[...document.querySelectorAll('#rd [data-a]')].map(b=>b.textContent)),await act(1));
+  console.log(errs);await b.close();
+})();
